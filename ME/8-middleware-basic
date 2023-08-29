@@ -1,0 +1,25 @@
+const express = require('express')
+
+const app = express()
+
+const loggerMiddleware = (req, res, next) => {
+  const query = req.query
+  const url = req.url
+
+  console.log( query, url)
+
+  next()
+}
+
+// // to apply on all routes
+// app.use(loggerMiddleware)
+
+
+// use as an argument to specify the route where middleware will be used
+app.get('/', loggerMiddleware, (req, res) => {
+  res.send('hello')
+})
+
+app.listen(5000, ()=> {
+  console.log('port 5000')
+})
