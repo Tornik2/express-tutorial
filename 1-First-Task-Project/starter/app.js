@@ -4,12 +4,18 @@ const app = express()
 require('dotenv').config()
 
 const tasksRoute = require('./routes/tasks')
-
+const notFound = require('./middleware/notFound')
 const connectDB = require('./db/connections')
+const errorHandlerMiddleware = require('./middleware/errorHandler')
+
 
 app.use(express.json())
-app.use('/' ,express.static('./public'))
+app.use('/' , express.static('./public'))
 app.use('/api/v1/tasks' , tasksRoute)
+app.use(notFound)
+app.use(errorHandlerMiddleware)
+
+
 
 
 const start = async () => {
