@@ -1,39 +1,25 @@
-const nodemailer = require('nodemailer');
-const sgMail = require('@sendgrid/mail');
+const nodemailer = require('nodemailer')
 
-const sendEmailEthereal = async (req, res) => {
-  let testAccount = await nodemailer.createTestAccount();
-
-  const transporter = nodemailer.createTransport({
+// create reusable transporter using SMTP (ethereal email)
+const transporter = nodemailer.createTransport({
     host: 'smtp.ethereal.email',
     port: 587,
     auth: {
-      user: 'marlene.legros@ethereal.email',
-      pass: 'va4q5BKKtry7aq58Gv',
-    },
-  });
-
-  let info = await transporter.sendMail({
-    from: '"Coding Addict" <codingaddict@gmail.com>',
-    to: 'bar@example.com',
-    subject: 'Hello',
-    html: '<h2>Sending Emails with Node.js</h2>',
-  });
-
-  res.json(info);
-};
+        user: 'marjolaine82@ethereal.email',
+        pass: 'QdQ215JrW17FWEcJt3'
+    }
+});
 
 const sendEmail = async (req, res) => {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  const msg = {
-    to: 'learncode@mail.com', // Change to your recipient
-    from: 'learncodetutorial@gmail.com', // Change to your verified sender
-    subject: 'Sending with SendGrid is Fun',
-    text: 'and easy to do anywhere, even with Node.js',
-    html: '<strong>and easy to do anywhere, even with Node.js</strong>',
-  };
-  const info = await sgMail.send(msg);
-  res.json(info);
-};
 
-module.exports = sendEmail;
+    const info = await transporter.sendMail({
+    from: '"Tornike" <tornik2@yahoo.com>', // sender address
+    to: "ttornik2@gmail.com, ttornik2@gmail.com", // list of receivers
+    subject: "Hello", // Subject line
+    text: "Hello world howariu?", // plain text body
+    html: "<b>Hello world?</b>", // html body
+    })
+    res.json(info)
+}
+
+module.exports = sendEmail
