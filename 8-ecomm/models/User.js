@@ -43,14 +43,6 @@ UserSchema.methods.comparePasswords = async function(userPassword) {
     return isMatch
 }
 
-UserSchema.methods.generateToken = async function() {
-    const payload = {
-        userId: this._id,
-        name: this.name,
-        email: this.email
-    }
-    const token = await jwt.sign(payload, process.env.JWT_SECRET)
-    return token
-}
+
 
 module.exports = mongoose.model('User', UserSchema)
