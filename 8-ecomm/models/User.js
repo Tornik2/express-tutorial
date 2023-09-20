@@ -1,4 +1,9 @@
 const mongoose = require('mongoose')
+//bcrypt = hash password
+const bcrypt = require('bcryptjs')
+//JWT
+const jwt = require('jsonwebtoken')
+//validator(for email in this case)
 const validator = require('validator')
 
 const UserSchema = mongoose.Schema({
@@ -14,6 +19,7 @@ const UserSchema = mongoose.Schema({
     },
     email: {
         type: String,
+        unique: true,
         required: true,
         validate: {
             validator: validator.isEmail,
@@ -26,5 +32,25 @@ const UserSchema = mongoose.Schema({
         default: 'user'
     }
 })
+
+UserSchema.pre('save', async function (){
+    const salt = await bcrypt.genSalt(10)
+    this.password = await bcrypt.hash(this.password, salt)
+})
+
+UserSchema.methods.comparePasswords = async function(userPassword) {
+    const isMatch = await bcrypt.compare(userPassword, this.password)
+    return isMatch
+}
+
+UserSchema.methods.generateToken = async function() {
+    const payload = {
+        userId: this._id,
+        name: this.name,
+        email: this.email
+    }
+    const token = await jwt.sign(payload, process.env.JWT_SECRET)
+    return token
+}
 
 module.exports = mongoose.model('User', UserSchema)
