@@ -20,4 +20,14 @@ const attachCookiesToResponse = async ({res,payload}) => {
 
 }
 
-module.exports = {createJwt, isTokenValid, attachCookiesToResponse}
+const createTokenUser = (user)=> {
+    const userToken = {
+        userId: user._id,
+        name: user.name,
+        role: user.role
+
+    }
+    return userToken
+}
+
+module.exports = {createJwt, isTokenValid, attachCookiesToResponse, createTokenUser}

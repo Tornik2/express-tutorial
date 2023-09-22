@@ -6,9 +6,9 @@ const { authenticateUser, authorizeRoles } = require('../middleware/full-auth')
 
 router.route('/').get(authenticateUser, authorizeRoles('admin', 'ruler', 'boss'), getAllUsers)
 
-router.route('/showMe').get(showCurrentUser)
-router.route('/updateUser').post(updateUser)
-router.route('/updateUserPassword').patch(updateUserPassword)
+router.route('/showMe').get( authenticateUser, showCurrentUser )
+router.route('/updateUser').patch(authenticateUser, updateUser)
+router.route('/updateUserPassword').patch(authenticateUser, updateUserPassword)
 
 router.route('/:id').get(authenticateUser, getSingleUser)
 

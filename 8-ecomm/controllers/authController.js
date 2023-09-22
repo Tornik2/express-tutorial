@@ -1,7 +1,6 @@
 const User = require('../models/User')
 const {StatusCodes} = require('http-status-codes')
-const { createJwt } = require('../utils')
-const { attachCookiesToResponse } = require('../utils/jwt')
+const { attachCookiesToResponse, createTokenUser } = require('../utils/jwt')
 const { BadRequestError, UnauthenticatedError } = require('../errors')
 
 
@@ -12,10 +11,8 @@ const register = async (req, res) => {
     const role = isFirstUser ? "admin" : "user"
 
     const newUser = await User.create({...req.body, role})
-    const payload = {
-        userId: newUser._id,
-        name: newUser.name
-    }
+    const payload = createTokenUser(newUser)
+    
     // send back token via cookies
     await attachCookiesToResponse({res, payload})    
     res.status(StatusCodes.CREATED).json({ user: payload})
@@ -36,11 +33,8 @@ const login = async (req, res) => {
         throw new UnauthenticatedError('Password is incorrect')
     }
     //pass token through cookies
-    const payload = {
-        userId: user._id,
-        name: user.name,
-        role: user.role
-    }
+    const payload = createTokenUser(user)
+
     await attachCookiesToResponse({res, payload})
     res.status(StatusCodes.OK).json({ user: payload})
 }
