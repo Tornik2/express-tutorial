@@ -38,7 +38,8 @@ const login = async (req, res) => {
     //pass token through cookies
     const payload = {
         userId: user._id,
-        name: user.name
+        name: user.name,
+        role: user.role
     }
     await attachCookiesToResponse({res, payload})
     res.status(StatusCodes.OK).json({ user: payload})

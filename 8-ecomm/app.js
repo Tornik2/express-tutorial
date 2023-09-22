@@ -15,17 +15,19 @@ const errorHandlerMiddleware = require('./middleware/error-handler')
 const notFound = require('./middleware/not-found')
 
 // router
-const routerFirst = require('./routes/authRouter')
+const authRouter = require('./routes/authRouter')
+const userRouter =  require('./routes/userRouter')
 
 app.use(morgan('tiny'))
 app.use(cookieParser(process.env.JWT_SECRET))
 app.use(express.json())
 
 app.get('/api/v1', (req, res)=> {
-    console.log(req.cookies)
+    
     res.send('good togo')
 })
-app.use('/api/v1/auth', routerFirst)
+app.use('/api/v1/auth', authRouter)
+app.use('/api/v1/users', userRouter)
 
 app.use(notFound)
 app.use(errorHandlerMiddleware)

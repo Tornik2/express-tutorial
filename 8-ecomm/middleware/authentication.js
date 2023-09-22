@@ -9,16 +9,16 @@ const jwt = require('jsonwebtoken')
 const auth = async (req, res, next) => {
     const header = req.headers.authorization
     if(!header || !header.startsWith('Bearer')) {
-        throw new BadRequestError('Not Authorized')
+        throw new UnauthenticatedError('Not Authorized')
     }
 
     const token = header.split(' ')[1]
     if(!token) {
-        throw new BadRequestError('Not Authorized')
+        throw new UnauthenticatedError('Not Authorized')
 
     }
     try {
-        const payload = await jwt.verify(token, process.env.JWT_SECRET, {expiresIn: process.env.JWT_LIFETIME})
+        const payload = await jwt.verify(token, process.env.JWT_SECRET)
         req.user = {id: payload.userId, name: payload.name}
     } catch (error) {
         console.log(error)
