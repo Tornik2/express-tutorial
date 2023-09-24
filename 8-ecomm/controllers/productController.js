@@ -48,11 +48,9 @@ const updateProduct = async (req, res) => {
 const deleteProduct = async (req, res) => {
     const { id: productId} = req.params
     const product = await Product.findOneAndDelete({ _id: productId })
-
     if(!product) {
         throw new CustomError.BadRequestError('Sorry, No Product with that id')
     }
-
     res.status(StatusCodes.OK).json({ product })
 }
 

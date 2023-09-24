@@ -1,3 +1,4 @@
+const Review = require('./Review')
 const mongoose = require('mongoose');
 
 const ProductSchema = new mongoose.Schema(
@@ -77,8 +78,9 @@ ProductSchema.virtual('reviews', {
   justOne: false,
 });
 
-ProductSchema.pre('findOneAndDelete', async function () {
-  console.log(this)
+ProductSchema.pre('findOneAndDelete', async function() {
+  productId = this.getQuery()
+  await mongoose.model('Review').deleteMany({ product: productId})
 })
 
 
