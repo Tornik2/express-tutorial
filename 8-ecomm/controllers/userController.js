@@ -1,5 +1,4 @@
 const { StatusCodes } = require('http-status-codes') 
-const bcrypt = require('bcryptjs')
 const { BadRequestError } = require('../errors')
 const { createTokenUser, attachCookiesToResponse } = require('../utils/jwt')
 const User = require('../models/User')
@@ -7,7 +6,7 @@ const { checkPermissions } = require('../utils/checkPermissions')
 
 const getAllUsers = async (req, res) => {
     const users = await User.find({ role: 'user'}).select('-password')
-    res.status(StatusCodes.OK).json({msg: users})
+    res.status(StatusCodes.OK).json({ users, nbHits: reviews.length})
 }
 
 const getSingleUser = async (req, res) => {

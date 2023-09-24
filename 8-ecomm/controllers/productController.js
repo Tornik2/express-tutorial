@@ -4,14 +4,14 @@ const path = require('path')
 const Product = require('../models/Product')
 
 const getAllProducts = async (req, res) => {
-    const products = await Product.find({})
+    const products = await Product.find({}).populate('reviews')
 
     res.status(StatusCodes.OK).json({ products, nbHits: products.length })
 }
 
 const getSingleProduct = async (req, res) => {
     const { id } = req.params
-    const product = await Product.findOne({_id: id})
+    const product = await Product.findOne({_id: id}).populate('reviews')
     if(!product) {
         throw new CustomError.BadRequestError('Sorry, No Product with that id')
     }
