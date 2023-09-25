@@ -79,7 +79,9 @@ ProductSchema.virtual('reviews', {
 });
 
 ProductSchema.pre('findOneAndDelete', async function() {
-  productId = this.getQuery()
+  // {gives me the query object I passed in findOneAndDelete}
+  const {_id: productId} = this.getQuery() 
+  console.log(productId)
   await mongoose.model('Review').deleteMany({ product: productId})
 })
 
