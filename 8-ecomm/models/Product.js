@@ -81,10 +81,16 @@ ProductSchema.virtual('reviews', {
 ProductSchema.pre('findOneAndDelete', async function() {
   // {gives me the query object I passed in findOneAndDelete}
   const {_id: productId} = this.getQuery() 
-  console.log(productId)
   await mongoose.model('Review').deleteMany({ product: productId})
 })
 
+ProductSchema.post('save', ()=> {
+  console.log('save hook post')
+})
+
+ProductSchema.post('findOneAndDelete', ()=> {
+  console.log('delete hook post')
+})
 
 
 module.exports = mongoose.model('Product', ProductSchema);

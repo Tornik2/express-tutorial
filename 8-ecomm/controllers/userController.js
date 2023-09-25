@@ -6,7 +6,7 @@ const { checkPermissions } = require('../utils/checkPermissions')
 
 const getAllUsers = async (req, res) => {
     const users = await User.find({ role: 'user'}).select('-password')
-    res.status(StatusCodes.OK).json({ users, nbHits: reviews.length})
+    res.status(StatusCodes.OK).json({ users, nbHits: users.length})
 }
 
 const getSingleUser = async (req, res) => {

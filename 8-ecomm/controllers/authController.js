@@ -30,6 +30,11 @@ const login = async (req, res) => {
     }
     const isPasswordCorrect = await user.comparePasswords(password)
     if(!isPasswordCorrect) {
+        //log out
+        res.cookie('token', 'logout', {
+        httpOnly: true,
+        expire: new Date(Date.now())
+    })
         throw new UnauthenticatedError('Password is incorrect')
     }
     //pass token through cookies

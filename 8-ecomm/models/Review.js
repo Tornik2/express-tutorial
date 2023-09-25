@@ -29,20 +29,46 @@ const ReviewSchema = mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true, toJSON: {virtuals: true}, toObject: {virtuals: true} }, 
+  { timestamps: true}, 
 );
 ReviewSchema.index({ product: 1, user: 1 }, { unique: true })
 
-ReviewSchema.virtual('review', {
-    path: 'Review',
-    localField: '_id',
-    foreignField: 'product',
-    onlyOne: false
+ReviewSchema.statics.calculateAverageRating = async function (productId) {
+  const result = await this.aggregate([
+    { $match: { product: productId } },
+    { $group: { 
+      _id: null,
+      averageRating: { $avg: "$rating" },
+      numOfReviews: { $sum: 1 }
+     }}
+  ])
+  
+    await mongoose.model('Product').findByIdAndUpdate(
+      {_id: productId},
+       { 
+        averageRating: Math.ceil(result[0]?.averageRating) || 0, 
+        numOfReviews: result[0]?.numOfReviews || 0 
+      })
+  
+  
+}
+
+
+ReviewSchema.post('save', async function(result){
+  await this.constructor.calculateAverageRating(this.product)
+  
+})
+ReviewSchema.post('findOneAndUpdate', async function(result){
+  // get product id from the result of the updated item
+  const productId = result?.product
+  await mongoose.model('Review').calculateAverageRating(productId)
+})
+ReviewSchema.post('findOneAndDelete', async function(result){
+  // get product id from the result of the deleted item
+  const productId = result?.product
+  await mongoose.model('Review').calculateAverageRating(productId)
 })
 
-ReviewSchema.pre('findOneAndDelete', ()=> {
-    console.log('pre remove console log')
-})
 
 
 module.exports = mongoose.model('Review', ReviewSchema);
