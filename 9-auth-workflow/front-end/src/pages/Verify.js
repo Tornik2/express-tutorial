@@ -16,12 +16,12 @@ const VerifyPage = () => {
   const verifyToken = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.post('/api/v1/auth/verify-email', {
+      const { data } = await axios.post('http://localhost:5000/api/v1/auth/verifyemail', {
         verificationToken: query.get('token'),
         email: query.get('email'),
       });
     } catch (error) {
-      // console.log(error.response);
+      console.log(error.response);
       setError(true);
     }
     setLoading(false);

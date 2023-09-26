@@ -1,5 +1,5 @@
 {
-  "name": "10-e-commerce-api",
+  "name": "06-jobs-api",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
@@ -23,8 +23,9 @@
     "http-status-codes": "^2.1.4",
     "joi": "^17.4.0",
     "jsonwebtoken": "^8.5.1",
-    "mongoose": "^6.0.8",
+    "mongoose": "^7.5.1",
     "morgan": "^1.10.0",
+    "nodemailer": "^6.9.5",
     "validator": "^13.6.0",
     "xss-clean": "^0.1.1"
   },

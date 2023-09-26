@@ -1,3 +1,4 @@
+const Review = require('./Review')
 const mongoose = require('mongoose');
 
 const ProductSchema = new mongoose.Schema(
@@ -67,7 +68,7 @@ const ProductSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
+  { timestamps: true,  toJSON: {virtuals: true}, toObject: {virtuals: true} }
 );
 
 ProductSchema.virtual('reviews', {
@@ -77,8 +78,19 @@ ProductSchema.virtual('reviews', {
   justOne: false,
 });
 
-ProductSchema.pre('remove', async function (next) {
-  await this.model('Review').deleteMany({ product: this._id });
-});
+ProductSchema.pre('findOneAndDelete', async function() {
+  // {gives me the query object I passed in findOneAndDelete}
+  const {_id: productId} = this.getQuery() 
+  await mongoose.model('Review').deleteMany({ product: productId})
+})
+
+ProductSchema.post('save', ()=> {
+  console.log('save hook post')
+})
+
+ProductSchema.post('findOneAndDelete', ()=> {
+  console.log('delete hook post')
+})
+
 
 module.exports = mongoose.model('Product', ProductSchema);

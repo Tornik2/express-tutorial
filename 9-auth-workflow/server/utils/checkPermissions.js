@@ -1,14 +1,9 @@
-const CustomError = require('../errors');
+const {UnauthorizedError} = require('../errors/index')
 
-const chechPermissions = (requestUser, resourceUserId) => {
-  // console.log(requestUser);
-  // console.log(resourceUserId);
-  // console.log(typeof resourceUserId);
-  if (requestUser.role === 'admin') return;
-  if (requestUser.userId === resourceUserId.toString()) return;
-  throw new CustomError.UnauthorizedError(
-    'Not authorized to access this route'
-  );
-};
+const checkPermissions = (requestUser, recourceUserId) => {
+    if(requestUser.role === 'admin') return
+    if(requestUser.userId === recourceUserId.toString())  return 
+    throw new UnauthorizedError('not authorized to access this route')
+}
 
-module.exports = chechPermissions;
+module.exports = {checkPermissions}

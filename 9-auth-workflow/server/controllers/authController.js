@@ -1,55 +1,86 @@
-const User = require('../models/User');
-const { StatusCodes } = require('http-status-codes');
-const CustomError = require('../errors');
-const { attachCookiesToResponse, createTokenUser } = require('../utils');
+//crypto - for creating random string 
+const crypto = require('crypto')
+
+const User = require('../models/User')
+const {StatusCodes} = require('http-status-codes')
+const { attachCookiesToResponse, createTokenUser } = require('../utils/jwt')
+const sendVerificationEmail = require('../utils/sendVerificationEmail')
+const { BadRequestError, UnauthenticatedError, NotFoundError } = require('../errors')
+
 
 const register = async (req, res) => {
-  const { email, name, password } = req.body;
+    
+    // first register person is an ADMIN
+    const isFirstUser = (await User.countDocuments({})) === 0 
+    const role = isFirstUser ? "admin" : "user"
 
-  const emailAlreadyExists = await User.findOne({ email });
-  if (emailAlreadyExists) {
-    throw new CustomError.BadRequestError('Email already exists');
-  }
+    const verificationToken = crypto.randomBytes(40).toString('hex')
 
-  // first registered user is an admin
-  const isFirstAccount = (await User.countDocuments({})) === 0;
-  const role = isFirstAccount ? 'admin' : 'user';
+    // req.body = {name, email, password }
+    const {name, email } = req.body
+    const newUser = await User.create({...req.body, role, verificationToken })
+    // host
+    const origin = 'http://localhost:3000'
+    await sendVerificationEmail(name, verificationToken, email, origin)
 
-  const user = await User.create({ name, email, password, role });
-  const tokenUser = createTokenUser(user);
-  attachCookiesToResponse({ res, user: tokenUser });
-  res.status(StatusCodes.CREATED).json({ user: tokenUser });
-};
+    res.status(StatusCodes.CREATED).json({ msg: 'Please check your email and verify', verificationToken: newUser.verificationToken})
+
+}
+
 const login = async (req, res) => {
-  const { email, password } = req.body;
+    const {email, password} = req.body
+    if(!email || !password) { 
+        throw new BadRequestError('Please provide both email and password')
+    }
+    const user = await User.findOne({email})
+    if(!user)  {
+        throw new UnauthenticatedError('No user found')
+    }
+    const isPasswordCorrect = await user.comparePasswords(password)
+    if(!isPasswordCorrect) {
+        //log out
+        res.cookie('token', 'logout', {
+        httpOnly: true,
+        expire: new Date(Date.now())
+    })
+        throw new UnauthenticatedError('Password is incorrect')
+    }
+    if(!user.isVerified) {
+        throw new UnauthenticatedError('Please verify your email')
+    }
+    //pass token through cookies
+    const payload = createTokenUser(user)
 
-  if (!email || !password) {
-    throw new CustomError.BadRequestError('Please provide email and password');
-  }
-  const user = await User.findOne({ email });
+    await attachCookiesToResponse({res, payload})
+    res.status(StatusCodes.OK).json({ user: payload})
+}
 
-  if (!user) {
-    throw new CustomError.UnauthenticatedError('Invalid Credentials');
-  }
-  const isPasswordCorrect = await user.comparePassword(password);
-  if (!isPasswordCorrect) {
-    throw new CustomError.UnauthenticatedError('Invalid Credentials');
-  }
-  const tokenUser = createTokenUser(user);
-  attachCookiesToResponse({ res, user: tokenUser });
-
-  res.status(StatusCodes.OK).json({ user: tokenUser });
-};
 const logout = async (req, res) => {
-  res.cookie('token', 'logout', {
-    httpOnly: true,
-    expires: new Date(Date.now() + 1000),
-  });
-  res.status(StatusCodes.OK).json({ msg: 'user logged out!' });
-};
+    res.cookie('token', 'logout', {
+        httpOnly: true,
+        expire: new Date(Date.now())
+    })
+    res.status(StatusCodes.OK).json({msg: 'logged out'})
+}
 
-module.exports = {
-  register,
-  login,
-  logout,
-};
+const verifyEmail = async (req, res) => {
+    const { verificationToken, email } = req.body
+    const user = await User.findOne({email})
+    if(!user)  {
+        throw new UnauthenticatedError('Verification Failed/ No user found')
+    }
+    const isTokenCorrect = verificationToken === user.verificationToken
+    if(!isTokenCorrect) {
+        throw new UnauthenticatedError('Verification Failed/Incorrect Token')
+    }
+
+    // verify user
+    user.isVerified = true
+    user.verified = Date.now()
+    user.verificationToken = ''
+    await user.save()
+
+    res.status(StatusCodes.OK).json({ msg: 'Email verified' })
+}
+
+module.exports = {register, login, logout, verifyEmail}
