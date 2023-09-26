@@ -2,6 +2,8 @@
 const crypto = require('crypto')
 
 const User = require('../models/User')
+const Token = require('../models/Token')
+
 const {StatusCodes} = require('http-status-codes')
 const { attachCookiesToResponse, createTokenUser } = require('../utils/jwt')
 const sendVerificationEmail = require('../utils/sendVerificationEmail')
@@ -48,10 +50,31 @@ const login = async (req, res) => {
     if(!user.isVerified) {
         throw new UnauthenticatedError('Please verify your email')
     }
+
     //pass token through cookies
     const payload = createTokenUser(user)
+    //refreshToken
+    let refreshToken = ''
+    //check existingToken
+    const existingToken = await Token.findOne({user: user._id})
+    if(existingToken) {
+        if(!existingToken.isValid) {
+            throw new UnauthenticatedError('Invalid Credentials')
+        }
+        refreshToken = existingToken.refreshToken
+        
+        await attachCookiesToResponse({res, payload, refreshToken})
+        res.status(StatusCodes.OK).json({ user: payload})
+        return
+    }
+    refreshToken = crypto.randomBytes(40).toString('hex')
+    const ip = req.ip
+    const userAgent = req.headers['user-agent']
+    const userToken = {refreshToken, ip, userAgent, user: user._id}
 
-    await attachCookiesToResponse({res, payload})
+    await Token.create(userToken)
+
+    await attachCookiesToResponse({res, payload, refreshToken})
     res.status(StatusCodes.OK).json({ user: payload})
 }
 

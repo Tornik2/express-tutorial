@@ -1,37 +1,35 @@
 const CustomError = require('../errors');
-const { isTokenValid } = require('../utils/jwt');
+const Token = require('../models/Token');
+const { isTokenValid, attachCookiesToResponse } = require('../utils/jwt');
 
 const authenticateUser = async (req, res, next) => {
-  let token;
-  
-  // check header
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer')) {
-    token = authHeader.split(' ')[1];
-  }
-  // check cookies
-  
-  else if (req.signedCookies.token) {
-    token = req.signedCookies.token;
-  }
+  const {accessToken, refreshToken} = req.signedCookies
 
-  if (!token) {
-    throw new CustomError.UnauthenticatedError(' invalid Authentication: no token');
-  }
   try {
-    const payload = isTokenValid(token);
-    // Attach the user and his permissions to the req object
-    req.user = {
-      name: payload.name,
-      userId: payload.userId,
-      role: payload.role,
-    };
+    if(accessToken) {
+      const payload = isTokenValid(accessToken)
+      req.user = payload
+      return next()
+    } 
+    const {payload, refToken} = isTokenValid(refreshToken)
+    // check if refreshtoken user is valid
+    const existingToken = await Token.findOne({
+      user: payload.userId,
+      refreshToken: refToken
+    })
+    if(!existingToken || !existingToken?.isValid) {
+      throw new CustomError.UnauthenticatedError('Authentication Invalid')
+    }
 
-    next();
+    await attachCookiesToResponse({res, payload, refreshToken: existingToken.refreshToken})
+    req.user = payload
+    next()
+
   } catch (error) {
     console.log(error)
     throw new CustomError.UnauthenticatedError('Invalid Authentication');
   }
+ 
 };
 
 const authorizeRoles = (...roles) => {
