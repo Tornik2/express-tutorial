@@ -8,6 +8,7 @@ const {StatusCodes} = require('http-status-codes')
 const { attachCookiesToResponse, createTokenUser } = require('../utils/jwt')
 const sendVerificationEmail = require('../utils/sendVerificationEmail')
 const { BadRequestError, UnauthenticatedError, NotFoundError } = require('../errors')
+const sendResetPasswordEmail = require('../utils/sendResetPasswordEmail')
 
 
 const register = async (req, res) => {
@@ -79,11 +80,18 @@ const login = async (req, res) => {
 }
 
 const logout = async (req, res) => {
-    res.cookie('token', 'logout', {
+    await Token.findOneAndDelete({user: req.user.userId})
+    res.cookie('accessToken', 'logout', {
         httpOnly: true,
         expire: new Date(Date.now())
     })
+    res.cookie('refreshToken', 'logout', {
+        httpOnly: true,
+        expire: new Date(Date.now())
+    })
+    
     res.status(StatusCodes.OK).json({msg: 'logged out'})
+
 }
 
 const verifyEmail = async (req, res) => {
@@ -106,4 +114,50 @@ const verifyEmail = async (req, res) => {
     res.status(StatusCodes.OK).json({ msg: 'Email verified' })
 }
 
-module.exports = {register, login, logout, verifyEmail}
+const forgotPassword = async (req, res) => {
+    const { email } = req.body
+    if(!email) {
+        throw new BadRequestError('Please provide valid email')
+    }
+    const user = await User.findOne({email})
+    if(!user)  {
+        throw new BadRequestError('Bad Request')
+    }
+    console.log(user._id.toString(), req.user.userId)
+    if(user._id.toString() !== req.user.userId) {
+        throw new BadRequestError('Bad Request')
+    }
+    //set passwordToken and expiration date on user
+    const passwordToken = crypto.randomBytes(40).toString('hex')
+    const tenMinutes = 1000 * 60 * 10
+    user.passwordToken = passwordToken
+    user.passwordTokenExpirationDate = new Date(Date.now() + tenMinutes)
+    await user.save()
+    //send reset password link
+    const origin = 'http://localhost:3000'
+    await sendResetPasswordEmail(email, user.passwordToken, origin)
+
+    res.status(StatusCodes.OK).json({ msg: 'Reset Password Email is Sent', passwordToken: user.passwordToken })
+}
+
+const resetPassword = async (req, res) => {
+    const { email, token, password } = req.body
+    const user = await User.findOne({email})
+
+    if (!user) {
+        throw new NotFoundError('User Not Found')
+    }
+    
+    const currentDate = new Date()
+    if(user.passwordToken === token && user.passwordTokenExpirationDate > currentDate) {
+        user.password = password
+        user.passwordToken = null
+        user.passwordTokenExpirationDate = null
+        await user.save()
+    } else {
+        throw new BadRequestError('Password Reset Link has expired')
+    }
+    
+    res.status(StatusCodes.OK).json({ msg: 'Password Renewed', user })
+}
+module.exports = { forgotPassword, resetPassword ,register, login, logout, verifyEmail }
